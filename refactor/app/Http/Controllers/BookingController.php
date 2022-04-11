@@ -35,13 +35,13 @@ class BookingController extends Controller
      */
     public function index(Request $request)
     {
-        if($user_id = $request->get('user_id')) {
+        $user_id = $request->get('user_id');
+        $response = [];
+        if (isset($user_id)) {
 
             $response = $this->repository->getUsersJobs($user_id);
 
-        }
-        elseif($request->__authenticatedUser->user_type == env('ADMIN_ROLE_ID') || $request->__authenticatedUser->user_type == env('SUPERADMIN_ROLE_ID'))
-        {
+        } elseif ($request->__authenticatedUser->user_type == env('ADMIN_ROLE_ID') || $request->__authenticatedUser->user_type == env('SUPERADMIN_ROLE_ID')) {
             $response = $this->repository->getAll($request);
         }
 
@@ -52,7 +52,7 @@ class BookingController extends Controller
      * @param $id
      * @return mixed
      */
-    public function show($id)
+    public function show($id = 0)
     {
         $job = $this->repository->with('translatorJobRel.user')->find($id);
 
@@ -66,6 +66,9 @@ class BookingController extends Controller
     public function store(Request $request)
     {
         $data = $request->all();
+
+        //there should be a validation function to validate request params//
+        //then pass for DB insertion.
 
         $response = $this->repository->store($request->__authenticatedUser, $data);
 
@@ -81,6 +84,10 @@ class BookingController extends Controller
     public function update($id, Request $request)
     {
         $data = $request->all();
+
+        //there should be a validation function to validate request params//
+        //then pass for DB insertion.
+
         $cuser = $request->__authenticatedUser;
         $response = $this->repository->updateJob($id, array_except($data, ['_token', 'submit']), $cuser);
 
@@ -107,8 +114,8 @@ class BookingController extends Controller
      */
     public function getHistory(Request $request)
     {
-        if($user_id = $request->get('user_id')) {
-
+        $user_id = $request->get('user_id');
+        if (isset($user_id)) {
             $response = $this->repository->getUsersJobsHistory($user_id, $request);
             return response($response);
         }
@@ -120,6 +127,14 @@ class BookingController extends Controller
      * @param Request $request
      * @return mixed
      */
+
+    /////////Can make one function for
+    ///acceptJob
+    /// acceptJobWithId
+    /// cancelJob
+    /// endJob
+    ///with conditions that call other functions
+
     public function acceptJob(Request $request)
     {
         $data = $request->all();
@@ -217,12 +232,12 @@ class BookingController extends Controller
         }
 
         if ($data['flagged'] == 'true') {
-            if($data['admincomment'] == '') return "Please, add comment";
+            if ($data['admincomment'] == '') return "Please, add comment";
             $flagged = 'yes';
         } else {
             $flagged = 'no';
         }
-        
+
         if ($data['manually_handled'] == 'true') {
             $manually_handled = 'yes';
         } else {
@@ -241,14 +256,11 @@ class BookingController extends Controller
             $admincomment = "";
         }
         if ($time || $distance) {
-
             $affectedRows = Distance::where('job_id', '=', $jobid)->update(array('distance' => $distance, 'time' => $time));
         }
 
         if ($admincomment || $session || $flagged || $manually_handled || $by_admin) {
-
             $affectedRows1 = Job::where('id', '=', $jobid)->update(array('admin_comments' => $admincomment, 'flagged' => $flagged, 'session_time' => $session, 'manually_handled' => $manually_handled, 'by_admin' => $by_admin));
-
         }
 
         return response('Record updated!');
